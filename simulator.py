@@ -31,7 +31,11 @@ X_w = 0.1   # Distance from COG to wing in m
 M = 0.1     # Mass in Kg
 I = 1       # Momentum of inertia
 g = 9.8     # Gravity in N
-k_d = 0.5   # Drag coefficient
+k_d = 0.1   # Drag coefficient
+k_l = 0.1   # Lift coefficient
+
+Theta_l = 1 # Theta on left wing
+Theta_r = 1 # Theta on right wing
 
 position = np.array([0.0,0.0,0.0])          # State (x,y,z)
 orientation = np.array([0.01,0.0,0.0])      # Orientation (thetax, thetay, thetaz)
@@ -53,6 +57,8 @@ def dicopter_draw(f):
     axis = [0, 0, 1]
     vlnew=np.dot(rotation_matrix(axis,theta),vl)
     vrnew=np.dot(rotation_matrix(axis,theta),vr)
+
+    print 'Theta:',theta*180/math.pi
 
     line.set_data([vlnew[0],vrnew[0]],[vlnew[1],vrnew[1]])
     line.set_3d_properties([vlnew[2],vrnew[2]])
@@ -87,8 +93,12 @@ def dicopterupdate(i):
         
         w_dot = A + B
         w = w + w_dot*Delta_t
-        theta = (theta + w*Delta_t) % 360
-        print w
+
+        F_l = k_l*w**2*Theta_l
+        F_r = k_l*w**2*Theta_r
+
+        theta = (theta + w*Delta_t) % (2*math.pi)
+        #print 'Angular speed:',w
         time.sleep(Delta_t)
 
 thread1 = Thread( target=dicopterupdate, args=(0, ) )
