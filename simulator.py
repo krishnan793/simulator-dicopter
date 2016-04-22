@@ -38,10 +38,9 @@ Theta_l = 1 # Theta on left wing
 Theta_r = 1 # Theta on right wing
 
 position = np.array([0.0,0.0,0.0])          # State (x,y,z)
-orientation = np.array([0.01,0.0,0.0])      # Orientation (thetax, thetay, thetaz)
-w = 0                                       # Angular velocity along z-axis
+orientation = np.array([0.0,0.0,0.0])       # Orientation (theta_x, theta_y, theta_z)
+velocity = np.array([0.0,0.0,0.0])          # Angular velocity (w_x, w_y, w_z)
 
-theta = 0;
 
 def init():
     global line
@@ -55,10 +54,10 @@ def dicopter_draw(f):
     vl = [-1*X_w,0,0]
     vr = [X_w,0,0]
     axis = [0, 0, 1]
-    vlnew=np.dot(rotation_matrix(axis,theta),vl)
-    vrnew=np.dot(rotation_matrix(axis,theta),vr)
+    vlnew=np.dot(rotation_matrix(axis,orientation[0]),vl)   # Thetax
+    vrnew=np.dot(rotation_matrix(axis,orientation[0]),vr)   # Thetax
 
-    print 'Theta:',theta*180/math.pi
+    #print 'Theta:',orientation[0]*180/math.pi
 
     line.set_data([vlnew[0],vrnew[0]],[vlnew[1],vrnew[1]])
     line.set_3d_properties([vlnew[2],vrnew[2]])
@@ -86,19 +85,22 @@ def rotation_matrix(axis, theta):
 
 def dicopterupdate(i):
     while (True):
-        global theta,w,theta,Delta_t
+        global orientation,w,Delta_t
         
-        A = -1.0*k_d*w**2*X_p/I
+        A = -1.0*k_d*velocity[2]**2*X_p/I
         B =  1.0*F_p*X_p/I
         
-        w_dot = A + B
-        w = w + w_dot*Delta_t
+        alpha_x = A + B
+        velocity[2] = velocity[2] + alpha_x*Delta_t
 
-        F_l = k_l*w**2*Theta_l
-        F_r = k_l*w**2*Theta_r
+        F_l = k_l*velocity[2]**2*Theta_l
+        F_r = k_l*velocity[2]**2*Theta_r
+        F = [0,0,F_l+F_r]
+        
+        alpha_y = (F_r-F_l)*X_w/I
 
-        theta = (theta + w*Delta_t) % (2*math.pi)
-        #print 'Angular speed:',w
+        orientation[0] = (orientation[0] + velocity[2]*Delta_t) % (2*math.pi)
+        print 'Angular speed:',velocity[2]
         time.sleep(Delta_t)
 
 thread1 = Thread( target=dicopterupdate, args=(0, ) )
